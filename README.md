@@ -20,7 +20,9 @@ Next step:
 ----------
   1) Validate unpacked folders contain data
   2) Unpack missing zips
-  3) Exit
+  3) Refresh status
+  4) Exit
+
 ```
 
 ## What does it give you? Why not do it manually?
