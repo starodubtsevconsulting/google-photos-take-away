@@ -40,5 +40,5 @@ Because Bash is gold:
 
 
 ## Links:
-Google Takeout Photos: https://takeout.google.com/settings/takeout/custom/photos
-Related article: [I Sold the Lens Before It Sold Me](https://medium.com/@sergii_54085/i-sold-the-lens-before-it-sold-me-4bdecb778559?postPublishedType=repub)
+- Google Takeout Photos: https://takeout.google.com/settings/takeout/custom/photos
+- Related article: [I Sold the Lens Before It Sold Me](https://medium.com/@sergii_54085/i-sold-the-lens-before-it-sold-me-4bdecb778559?postPublishedType=repub)
