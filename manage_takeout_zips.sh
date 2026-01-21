@@ -6,6 +6,8 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 . "$SCRIPT_DIR/scripts/lib_validate_folders.sh"
 # shellcheck source=scripts/lib_unpack_missing_zips.sh
 . "$SCRIPT_DIR/scripts/lib_unpack_missing_zips.sh"
+# shellcheck source=scripts/delete-zips.sh
+. "$SCRIPT_DIR/scripts/delete-zips.sh"
 
 TARGET_DIR="${1:-.}"
 
@@ -23,7 +25,31 @@ while true; do
 
   if [ "$TOTAL" -eq 0 ]; then
     echo "No zip files found."
-    exit 0
+    echo
+    echo "Choose action:"
+    echo "--------------"
+    echo "  1) Validate unpacked folders contain data"
+    echo "  2) Refresh status"
+    echo "  3) Exit"
+    echo
+    read -rp "Enter choice [1-3]: " choice
+
+    case "$choice" in
+      1)
+        echo "Nothing to validate: no zip files found."
+        ;;
+      2)
+        continue
+        ;;
+      3)
+        echo "Exit."
+        exit 0
+        ;;
+      *)
+        echo "Invalid choice."
+        ;;
+    esac
+    continue
   fi
 
   unpacked=()
@@ -48,6 +74,18 @@ while true; do
     echo "${#not_unpacked[@]} not unpacked"
   fi
   echo
+
+  if [ "${#not_unpacked[@]}" -eq 0 ]; then
+    read -rp "All unpacked. Validate now? [y/N]: " auto_validate
+    case "$auto_validate" in
+      [yY]|[yY][eE][sS])
+        validate_unpacked_folders unpacked
+        continue
+        ;;
+      *)
+        ;;
+    esac
+  fi
 
   echo "Choose action:"
   echo "--------------"

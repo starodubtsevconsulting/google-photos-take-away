@@ -156,11 +156,7 @@ validate_unpacked_folders() {
 
   case "$subchoice" in
     1)
-      echo
-      echo "Removing zip files..."
-      for zip in "${_unpacked[@]}"; do
-        rm -v "$zip"
-      done
+      remove_zip_files _unpacked
       ;;
     *)
       ;;
