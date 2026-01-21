@@ -9,9 +9,9 @@ How to use:
 
 I assume you’ve downloaded all the ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
-```
-`./manage_takeout_zips.sh /media/sergii/60034cb1-fe02-445b-aaf9-356d9bc58d93/takeout
-Status:`
+```bash
+./manage_takeout_zips.sh /media/sergii/60034cb1-fe02-445b-aaf9-356d9bc58d93/takeout
+Status:
 -------
 27 out of 127 unpacked
 100 not unpacked
@@ -42,3 +42,4 @@ Because Bash is gold:
 ## Links:
 - Google Takeout Photos: https://takeout.google.com/settings/takeout/custom/photos
 - Related article: [I Sold the Lens Before It Sold Me](https://medium.com/@sergii_54085/i-sold-the-lens-before-it-sold-me-4bdecb778559?postPublishedType=repub)
+- Any questions or suggestions? Feel free to contact me: https://starodubtsev.consulting/
