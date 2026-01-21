@@ -29,6 +29,16 @@ Next step:
 
 You can’t just select all 10,000 ZIP files and unpack them at once — it will fail. You have to do it sequentially, and then you still need to check that everything unpacked correctly and that nothing was lost. That would take hours to do by hand. This simple script helps with exactly that.
 
+## Why not just use some smart unzip tool that does it all?
+
+Sure, you could — I just don’t know any. And besides that, it’s more than just unzipping: once everything is unpacked, you still have to do some shuffling and go through the folders, which takes time too.
+
+### Why `.sh` (Bash) script? Why not my popular language?
+
+Because Bash is gold:  
+[Why Bash Scripting Shines in the AI Era](https://medium.com/starodubtsev-consulting/why-bash-scripting-shines-in-the-ai-era-e6dfa29cbc6c)
+
+
 ## Links:
 Related article: [I Sold the Lens Before It Sold Me](https://medium.com/@sergii_54085/i-sold-the-lens-before-it-sold-me-4bdecb778559?postPublishedType=repub)
 
