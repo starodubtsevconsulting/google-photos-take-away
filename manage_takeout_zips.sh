@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   ./manage_takeout_zips.sh [path]
-# If path is not provided, current directory is used.
-
 TARGET_DIR="${1:-.}"
 
 if [ ! -d "$TARGET_DIR" ]; then
@@ -24,9 +20,6 @@ while true; do
     exit 0
   fi
 
-  # --------------------
-  # PHASE 1 — FAST STATUS
-  # --------------------
   unpacked=()
   not_unpacked=()
 
@@ -46,9 +39,6 @@ while true; do
   echo "${#not_unpacked[@]} not unpacked"
   echo
 
-  # --------------------
-  # MENU
-  # --------------------
   echo "Choose action:"
   echo "--------------"
   echo "  1) Validate unpacked folders contain data"
@@ -60,9 +50,6 @@ while true; do
 
   case "$choice" in
 
-    # --------------------
-    # PHASE 2 — VALIDATION
-    # --------------------
     1)
       echo
       echo "Validation:"
@@ -73,7 +60,7 @@ while true; do
 
       for zip in "${unpacked[@]}"; do
         base="${zip%.zip}"
-        file_count=$(find "$base" -type f | wc -l)
+        file_count=$( (find "$base" -type f 2>/dev/null | wc -l) || true )
 
         if [ "$file_count" -gt 0 ]; then
           ((ok++))
@@ -109,9 +96,6 @@ while true; do
       esac
       ;;
 
-    # --------------------
-    # UNPACK MISSING
-    # --------------------
     2)
       echo
       echo "Unpacking missing zips..."
@@ -122,16 +106,10 @@ while true; do
       done
       ;;
 
-    # --------------------
-    # REFRESH STATUS
-    # --------------------
     3)
       continue
       ;;
 
-    # --------------------
-    # EXIT
-    # --------------------
     4)
       echo "Exit."
       exit 0
