@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=scripts/lib_validate_folders.sh
+. "$SCRIPT_DIR/scripts/lib_validate_folders.sh"
+# shellcheck source=scripts/lib_unpack_missing_zips.sh
+. "$SCRIPT_DIR/scripts/lib_unpack_missing_zips.sh"
+
 TARGET_DIR="${1:-.}"
 
 if [ ! -d "$TARGET_DIR" ]; then
@@ -36,7 +42,11 @@ while true; do
   echo "Status:"
   echo "-------"
   echo "${#unpacked[@]} out of $TOTAL unpacked"
-  echo "${#not_unpacked[@]} not unpacked"
+  if [ "${#not_unpacked[@]}" -eq 0 ]; then
+    echo "All unpacked"
+  else
+    echo "${#not_unpacked[@]} not unpacked"
+  fi
   echo
 
   echo "Choose action:"
@@ -51,59 +61,11 @@ while true; do
   case "$choice" in
 
     1)
-      echo
-      echo "Validation:"
-      echo "-----------"
-
-      ok=0
-      empty=0
-
-      for zip in "${unpacked[@]}"; do
-        base="${zip%.zip}"
-        file_count=$( (find "$base" -type f 2>/dev/null | wc -l) || true )
-
-        if [ "$file_count" -gt 0 ]; then
-          ((ok++))
-        else
-          ((empty++))
-        fi
-      done
-
-      echo
-      echo "Result:"
-      echo "-------"
-      echo "Folders with data : $ok"
-      echo "Empty folders     : $empty"
-      echo
-
-      echo "Next step:"
-      echo "----------"
-      echo "  1) Remove zip files for validated folders"
-      echo "  2) Back to status"
-      echo
-      read -rp "Enter choice [1-2]: " subchoice
-
-      case "$subchoice" in
-        1)
-          echo
-          echo "Removing zip files..."
-          for zip in "${unpacked[@]}"; do
-            rm -v "$zip"
-          done
-          ;;
-        *)
-          ;;
-      esac
+      validate_unpacked_folders unpacked
       ;;
 
     2)
-      echo
-      echo "Unpacking missing zips..."
-      for zip in "${not_unpacked[@]}"; do
-        base="${zip%.zip}"
-        echo "  → $zip"
-        unzip -o "$zip" -d "$base"
-      done
+      unpack_missing_zips not_unpacked
       ;;
 
     3)
@@ -120,4 +82,3 @@ while true; do
       ;;
   esac
 done
-
