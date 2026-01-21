@@ -7,7 +7,7 @@ This script provides a bit of that functionality. It works on Linux (and I think
 
 How to use:
 
-We assume you did dowload all the zips to single folder.
+We assume you’ve downloaded all the ZIP files into a single folder (this could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂). So we assume you download the ZIPs once.
 
 ```
 `./manage_takeout_zips.sh /media/sergii/60034cb1-fe02-445b-aaf9-356d9bc58d93/takeout
@@ -22,3 +22,7 @@ Next step:
   2) Unpack missing zips
   3) Exit
 ```
+
+## What does it give you? Why not do it manually?
+
+You can’t just select all 10,000 ZIP files and unpack them at once — it will fail. You have to do it sequentially, and then you still need to check that everything unpacked correctly and that nothing was lost. That would take hours to do by hand. This simple script helps with exactly that.
