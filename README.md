@@ -7,7 +7,7 @@ This script provides a bit of that functionality. It works on Linux (and I think
 
 How to use:
 
-We assume you’ve downloaded all the ZIP files into a single folder (this could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂). So we assume you download the ZIPs once.
+I assume you’ve downloaded all the ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
 ```
 `./manage_takeout_zips.sh /media/sergii/60034cb1-fe02-445b-aaf9-356d9bc58d93/takeout
