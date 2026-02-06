@@ -1,3 +1,7 @@
+# Google Takeout
+
+Welcome to the Google Takeout helper repository.
+
 It is annoying how hard it is to take photos out of Google Photos. 
 
 They seem to have done everything possible to make it as difficult as possible. 
