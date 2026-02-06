@@ -1,1 +1,0 @@
-- 2026-02-06: 3d04621 feature: flat photo/video move flow (documentation/move-files-flat-feature.md)
