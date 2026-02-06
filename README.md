@@ -10,7 +10,7 @@ How to use:
 I assume you’ve downloaded all the ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
 ```bash
-./manage_takeout_zips.sh /media/sergii/60034cb1-fe02-445b-aaf9-356d9bc58d93/takeout
+./takeout.sh /media/USER/DRIVE/takeout
 Status:
 -------
 27 out of 127 unpacked
@@ -23,6 +23,19 @@ Next step:
   3) Refresh status
   4) Exit
 
+```
+
+Move files (flat):
+
+```bash
+# Photos
+./scripts/move_files_flat.sh --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
+
+# Videos
+./scripts/move_files_flat.sh --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/videos --type video
+
+# Dry run
+./scripts/move_files_flat.sh --dry-run --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
 ```
 
 ## What does it give you? Why not do it manually?

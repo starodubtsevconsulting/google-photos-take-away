@@ -9,6 +9,44 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=scripts/delete-zips.sh
 . "$SCRIPT_DIR/scripts/delete-zips.sh"
 
+DEFAULT_SRC_ROOT="/media/USER/DRIVE/takeout"
+DEFAULT_DST_ROOT="/media/USER/DRIVE/takeout"
+
+prompt_src_dir() {
+  local input
+  read -rp "Source folder with unpacked takeout [${DEFAULT_SRC_ROOT}]: " input
+  if [ -z "$input" ]; then
+    input="$DEFAULT_SRC_ROOT"
+  fi
+  echo "$input"
+}
+
+prompt_dst_root() {
+  local input
+  read -rp "Destination base folder [${DEFAULT_DST_ROOT}]: " input
+  if [ -z "$input" ]; then
+    input="$DEFAULT_DST_ROOT"
+  fi
+  echo "$input"
+}
+
+move_photos_flow() {
+  local src_dir=$1
+  local dst_root=$2
+  "$SCRIPT_DIR/scripts/move_files_flat.sh" \
+    --src "$src_dir" \
+    --dst "$dst_root/photos" \
+    --type image
+}
+
+move_videos_flow() {
+  local src_dir=$1
+  local dst_root=$2
+  "$SCRIPT_DIR/scripts/move_files_flat.sh" \
+    --src "$src_dir" \
+    --dst "$dst_root/videos" \
+    --type video
+}
 TARGET_DIR="${1:-.}"
 
 if [ ! -d "$TARGET_DIR" ]; then
@@ -28,20 +66,32 @@ while true; do
     echo
     echo "Choose action:"
     echo "--------------"
-    echo "  1) Validate unpacked folders contain data"
-    echo "  2) Refresh status"
-    echo "  3) Exit"
+    echo "  1) Move photos to <dst>/photos (flat)"
+    echo "  2) Move videos to <dst>/videos (flat)"
+    echo "  3) Validate unpacked folders contain data"
+    echo "  4) Refresh status"
+    echo "  5) Exit"
     echo
-    read -rp "Enter choice [1-3]: " choice
+    read -rp "Enter choice [1-5]: " choice
 
     case "$choice" in
       1)
-        echo "Nothing to validate: no zip files found."
+        src_dir=$(prompt_src_dir)
+        dst_root=$(prompt_dst_root)
+        move_photos_flow "$src_dir" "$dst_root"
         ;;
       2)
-        continue
+        src_dir=$(prompt_src_dir)
+        dst_root=$(prompt_dst_root)
+        move_videos_flow "$src_dir" "$dst_root"
         ;;
       3)
+        echo "Nothing to validate: no zip files found."
+        ;;
+      4)
+        continue
+        ;;
+      5)
         echo "Exit."
         exit 0
         ;;
@@ -91,10 +141,12 @@ while true; do
   echo "--------------"
   echo "  1) Validate unpacked folders contain data"
   echo "  2) Unpack missing zips"
-  echo "  3) Refresh status"
-  echo "  4) Exit"
+  echo "  3) Move photos to <dst>/photos (flat)"
+  echo "  4) Move videos to <dst>/videos (flat)"
+  echo "  5) Refresh status"
+  echo "  6) Exit"
   echo
-  read -rp "Enter choice [1-4]: " choice
+  read -rp "Enter choice [1-6]: " choice
 
   case "$choice" in
 
@@ -107,14 +159,25 @@ while true; do
       ;;
 
     3)
-      continue
+      src_dir=$(prompt_src_dir)
+      dst_root=$(prompt_dst_root)
+      move_photos_flow "$src_dir" "$dst_root"
       ;;
 
     4)
+      src_dir=$(prompt_src_dir)
+      dst_root=$(prompt_dst_root)
+      move_videos_flow "$src_dir" "$dst_root"
+      ;;
+
+    5)
+      continue
+      ;;
+
+    6)
       echo "Exit."
       exit 0
       ;;
-
     *)
       echo "Invalid choice."
       ;;
