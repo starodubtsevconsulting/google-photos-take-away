@@ -1,1 +1,6 @@
 plan/
+.idea/
+.vscode/
+.fleet/
+.settings/
+*.iml

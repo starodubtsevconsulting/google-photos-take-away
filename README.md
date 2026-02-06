@@ -7,7 +7,8 @@ This script provides a bit of that functionality. It works on Linux (and I think
 
 How to use:
 
-I assume you’ve downloaded all the ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
+I assume you’ve downloaded all the 
+ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
 ```bash
 ./takeout.sh /media/USER/DRIVE/takeout
@@ -53,6 +54,37 @@ Flow:
 Menu usage:
 - Move photos to `<dst>/photos` (flat)
 - Move videos to `<dst>/videos` (flat)
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+  A[Start takeout.sh] --> B[Select target folder with zips]
+  B --> C{Any zip files}
+  C -->|No| D[Show menu no zips]
+  C -->|Yes| E[Scan zips and unpacked folders]
+  E --> F{All unpacked}
+  F -->|Yes| G[Offer validation]
+  F -->|No| H[Show menu with actions]
+
+  D --> I[Move photos to dst slash photos]
+  D --> J[Move videos to dst slash videos]
+  D --> K[Validate unpacked folders]
+  D --> L[Refresh or exit]
+
+  H --> M[Validate unpacked folders]
+  H --> N[Unpack missing zips]
+  H --> I
+  H --> J
+  H --> L
+
+  I --> P[Prompt src and dst base]
+  J --> P
+  P --> Q[Move files flat with progress]
+  Q --> R[Finish]
+
+  G --> M
+```
 
 ## Move Files Flat Feature
 
