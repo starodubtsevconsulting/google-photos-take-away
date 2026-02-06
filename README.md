@@ -59,6 +59,8 @@ Menu usage:
 
 The guided cleanup walks you through removing empty folders and any remaining files by extension until there is nothing left to clean. The end result is a flat media layout with two folders: `photos/` and `videos/`.
 
+TODO: next step will be sorting files and grouping them.
+
 ## Flow Diagram
 
 ```mermaid
