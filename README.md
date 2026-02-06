@@ -54,6 +54,10 @@ Flow:
 Menu usage:
 - Move photos to `<dst>/photos` (flat)
 - Move videos to `<dst>/videos` (flat)
+- Remove empty folders (guided cleanup)
+- Remove files by extension
+
+The guided cleanup walks you through removing empty folders and any remaining files by extension until there is nothing left to clean. The end result is a flat media layout with two folders: `photos/` and `videos/`.
 
 ## Flow Diagram
 
@@ -69,19 +73,32 @@ flowchart TD
 
   D --> I[Move photos to dst slash photos]
   D --> J[Move videos to dst slash videos]
-  D --> K[Validate unpacked folders]
-  D --> L[Refresh or exit]
+  D --> K[Guided cleanup empty folders]
+  D --> L[Remove files by extension]
+  D --> M[Validate unpacked folders]
+  D --> N[Refresh or exit]
 
   H --> M[Validate unpacked folders]
-  H --> N[Unpack missing zips]
+  H --> O[Unpack missing zips]
   H --> I
   H --> J
+  H --> K
   H --> L
+  H --> N
 
   I --> P[Prompt src and dst base]
   J --> P
   P --> Q[Move files flat with progress]
   Q --> R[Finish]
+
+  K --> S[Remove empty folders]
+  S --> T{Folders remain}
+  T -->|Yes| U[Show top extensions]
+  U --> V{Remove by extension}
+  V -->|Yes| W[Remove files by extension]
+  W --> S
+  V -->|No| R
+  T -->|No| R
 
   G --> M
 ```
