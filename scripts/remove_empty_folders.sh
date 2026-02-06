@@ -131,14 +131,48 @@ remove_empty_folders() {
   fi
 }
 
+_print_remaining_extensions() {
+  local root=$1
+
+  find "$root" -type f -print0 | \
+    awk -v RS='\0' '
+      {
+        name=$0
+        base=name
+        sub(/^.*\//,"",base)
+        ext=""
+        if (base ~ /^\./ && index(substr(base,2), ".") == 0) {
+          ext="<no-ext>"
+        } else if (base ~ /\./) {
+          ext=tolower("." substr(base, match(base, /[^.]*$/)))
+        } else {
+          ext="<no-ext>"
+        }
+        if (!(ext in seen)) {
+          seen[ext]=1
+          order[++count]=ext
+        }
+      }
+      END {
+        for (i=1; i<=count && i<=10; i++) {
+          print order[i]
+        }
+      }
+    '
+}
+
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   root_dir=""
+  summary=0
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --root)
         shift
         root_dir=${1:-}
+        ;;
+      --summary)
+        summary=1
         ;;
       *)
         echo "Unknown argument: $1"
@@ -153,4 +187,14 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   fi
 
   remove_empty_folders "$root_dir"
+
+  if [ "$summary" -eq 1 ]; then
+    remaining=$(find "$root_dir" -type d ! -empty -print0 | tr -cd '\0' | wc -c | tr -d ' ')
+    if [ -z "$remaining" ]; then
+      remaining=0
+    fi
+    ext_list=$(_print_remaining_extensions "$root_dir" | paste -sd ',' -)
+    echo "REMAINING=$remaining"
+    echo "EXTENSIONS=$ext_list"
+  fi
 fi

@@ -45,6 +45,36 @@ prompt_ext() {
   echo "$input"
 }
 
+cleanup_empty_folders_flow() {
+  local root_dir=$1
+
+  while true; do
+    summary=$("$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir" --summary)
+    remaining=$(echo "$summary" | awk -F= '/^REMAINING=/ {print $2}')
+    extensions=$(echo "$summary" | awk -F= '/^EXTENSIONS=/ {print $2}')
+
+    if [ -z "$remaining" ] || [ "$remaining" -eq 0 ]; then
+      echo "All folders are clean."
+      break
+    fi
+
+    if [ -n "$extensions" ]; then
+      echo "Remaining file extensions: $extensions"
+    fi
+
+    read -rp "Remove files by extension and retry empty folders? [y/N]: " confirm
+    case "$confirm" in
+      [yY]|[yY][eE][sS])
+        ext=$(prompt_ext)
+        "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+}
+
 move_photos_flow() {
   local src_dir=$1
   local dst_root=$2
@@ -104,7 +134,7 @@ while true; do
         ;;
       3)
         root_dir=$(prompt_root_dir)
-        "$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir"
+        cleanup_empty_folders_flow "$root_dir"
         ;;
       4)
         root_dir=$(prompt_root_dir)
@@ -200,7 +230,7 @@ while true; do
 
     5)
       root_dir=$(prompt_root_dir)
-      "$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir"
+      cleanup_empty_folders_flow "$root_dir"
       ;;
 
     6)
