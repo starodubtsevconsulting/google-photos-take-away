@@ -59,7 +59,7 @@ _file_find() {
         -iname '*.heic' -o -iname '*.heif' -o -iname '*.webp' -o -iname '*.tiff' -o \
         -iname '*.tif' -o -iname '*.bmp' -o -iname '*.dng' -o -iname '*.cr2' -o \
         -iname '*.cr3' -o -iname '*.nef' -o -iname '*.arw' -o -iname '*.raf' -o \
-        -iname '*.rw2' \
+        -iname '*.rw2' -o -iname '*.jfif' \
       )
       ;;
     video)
@@ -82,6 +82,42 @@ _file_find() {
     -type f \( "${match[@]}" \) -print0
 }
 
+_normalize_path() {
+  local path=$1
+  if command -v realpath >/dev/null 2>&1; then
+    realpath -m "$path"
+    return
+  fi
+  python - <<'PY' "$path" 2>/dev/null || true
+import os, sys
+print(os.path.abspath(sys.argv[1]))
+PY
+}
+
+_validate_paths() {
+  local src_dir=$1
+  local dst_dir=$2
+  local src_abs
+  local dst_abs
+
+  src_abs=$(_normalize_path "$src_dir")
+  dst_abs=$(_normalize_path "$dst_dir")
+
+  if [ -z "$src_abs" ] || [ -z "$dst_abs" ]; then
+    echo "Failed to resolve src or dst path."
+    return 1
+  fi
+
+  case "$dst_abs" in
+    "$src_abs" | "$src_abs"/*)
+      echo "Invalid destination: dst must not be inside src."
+      echo "  src: $src_abs"
+      echo "  dst: $dst_abs"
+      return 1
+      ;;
+  esac
+}
+
 move_files_flat() {
   local root=$1
   local dest_dir=$2
@@ -90,6 +126,10 @@ move_files_flat() {
 
   if [ ! -d "$root" ]; then
     echo "Directory not found: $root"
+    return 1
+  fi
+
+  if ! _validate_paths "$root" "$dest_dir"; then
     return 1
   fi
 

@@ -30,6 +30,21 @@ prompt_dst_root() {
   echo "$input"
 }
 
+prompt_root_dir() {
+  local input
+  read -rp "Root folder to clean empty directories [${DEFAULT_SRC_ROOT}]: " input
+  if [ -z "$input" ]; then
+    input="$DEFAULT_SRC_ROOT"
+  fi
+  echo "$input"
+}
+
+prompt_ext() {
+  local input
+  read -rp "File extension to remove (e.g. .json): " input
+  echo "$input"
+}
+
 move_photos_flow() {
   local src_dir=$1
   local dst_root=$2
@@ -68,11 +83,13 @@ while true; do
     echo "--------------"
     echo "  1) Move photos to <dst>/photos (flat)"
     echo "  2) Move videos to <dst>/videos (flat)"
-    echo "  3) Validate unpacked folders contain data"
-    echo "  4) Refresh status"
-    echo "  5) Exit"
+    echo "  3) Remove empty folders"
+    echo "  4) Remove files by extension"
+    echo "  5) Validate unpacked folders contain data"
+    echo "  6) Refresh status"
+    echo "  7) Exit"
     echo
-    read -rp "Enter choice [1-5]: " choice
+    read -rp "Enter choice [1-7]: " choice
 
     case "$choice" in
       1)
@@ -86,12 +103,21 @@ while true; do
         move_videos_flow "$src_dir" "$dst_root"
         ;;
       3)
-        echo "Nothing to validate: no zip files found."
+        root_dir=$(prompt_root_dir)
+        "$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir"
         ;;
       4)
-        continue
+        root_dir=$(prompt_root_dir)
+        ext=$(prompt_ext)
+        "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
         ;;
       5)
+        echo "Nothing to validate: no zip files found."
+        ;;
+      6)
+        continue
+        ;;
+      7)
         echo "Exit."
         exit 0
         ;;
@@ -143,10 +169,12 @@ while true; do
   echo "  2) Unpack missing zips"
   echo "  3) Move photos to <dst>/photos (flat)"
   echo "  4) Move videos to <dst>/videos (flat)"
-  echo "  5) Refresh status"
-  echo "  6) Exit"
+  echo "  5) Remove empty folders"
+  echo "  6) Remove files by extension"
+  echo "  7) Refresh status"
+  echo "  8) Exit"
   echo
-  read -rp "Enter choice [1-6]: " choice
+  read -rp "Enter choice [1-8]: " choice
 
   case "$choice" in
 
@@ -171,10 +199,21 @@ while true; do
       ;;
 
     5)
-      continue
+      root_dir=$(prompt_root_dir)
+      "$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir"
       ;;
 
     6)
+      root_dir=$(prompt_root_dir)
+      ext=$(prompt_ext)
+      "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
+      ;;
+
+    7)
+      continue
+      ;;
+
+    8)
       echo "Exit."
       exit 0
       ;;
