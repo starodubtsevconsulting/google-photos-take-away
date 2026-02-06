@@ -38,6 +38,38 @@ Move files (flat):
 ./scripts/move_files_flat.sh --dry-run --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
 ```
 
+## Move Files Flat Feature
+
+Purpose: consolidate nested Takeout media into a single destination folder. It supports images and videos, avoids reprocessing the destination tree, and resolves filename collisions by appending an incrementing suffix.
+
+Flow:
+- Source: a folder that already contains unpacked Takeout folders with nested media.
+- Destination base: a folder where the script creates `photos/` and `videos/` subfolders.
+- Photos step: moves image files into `<dst>/photos` with a flat structure.
+- Videos step: moves video files into `<dst>/videos` with a flat structure.
+- Progress: a progress bar is shown while the files are moved.
+- Dry run: prints progress without moving any files.
+
+Menu usage:
+- Move photos to `<dst>/photos` (flat)
+- Move videos to `<dst>/videos` (flat)
+
+## Move Files Flat Feature
+
+Purpose: consolidate nested Takeout media into a single destination folder. It supports images and videos, avoids reprocessing the destination tree, and resolves filename collisions by appending an incrementing suffix.
+
+Flow:
+- Source: a folder that already contains unpacked Takeout folders with nested media.
+- Destination base: a folder where the script creates `photos/` and `videos/` subfolders.
+- Photos step: moves image files into `<dst>/photos` with a flat structure.
+- Videos step: moves video files into `<dst>/videos` with a flat structure.
+- Progress: a progress bar is shown while the files are moved.
+- Dry run: prints progress without moving any files.
+
+Menu usage:
+- Move photos to `<dst>/photos` (flat)
+- Move videos to `<dst>/videos` (flat)
+
 ## What does it give you? Why not do it manually?
 
 You can’t just select all 10,000 ZIP files and unpack them at once — it will fail. You have to do it sequentially, and then you still need to check that everything unpacked correctly and that nothing was lost. That would take hours to do by hand. This simple script helps with exactly that.
