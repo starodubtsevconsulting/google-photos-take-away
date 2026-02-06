@@ -15,7 +15,7 @@ I assume you’ve downloaded all the
 ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
 ```bash
-./takeout.sh /media/USER/DRIVE/takeout
+./takeout /media/USER/DRIVE/takeout
 Status:
 -------
 27 out of 127 unpacked
@@ -43,6 +43,8 @@ Move files (flat):
 ./scripts/move_files_flat.sh --dry-run --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
 ```
 
+TODO: add more file types for each section when moving files.
+
 ## Move Files Flat Feature
 
 Purpose: consolidate nested Takeout media into a single destination folder. It supports images and videos, avoids reprocessing the destination tree, and resolves filename collisions by appending an incrementing suffix.
@@ -69,7 +71,7 @@ TODO: next step will be sorting files and grouping them.
 
 ```mermaid
 flowchart TD
-  A[Start takeout.sh] --> B[Select target folder with zips]
+  A[Start takeout] --> B[Select target folder with zips]
   B --> C{Any zip files}
   C -->|No| D[Show menu no zips]
   C -->|Yes| E[Scan zips and unpacked folders]
