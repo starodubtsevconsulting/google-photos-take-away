@@ -1,5 +1,0 @@
-- [x] Add flow step to move all image files from an already-unpacked folder into takeout/photos (flat)
-- [x] Update takeout.sh to prompt for src and dst base paths and perform moves
-- [x] Extract move logic into scripts/move_files_flat.sh and source it from takeout.sh
-- [x] Document the flat move feature
-- [ ] Verify behavior / sanity check script
