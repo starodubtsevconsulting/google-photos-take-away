@@ -7,3 +7,5 @@ plan/
 
 test/dist/*
 !test/dist/.gitkeep
+
+.state/

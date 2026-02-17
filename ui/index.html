@@ -14,14 +14,92 @@
       <section class="hero">
         <p class="eyebrow">Local-Only Web UI</p>
         <h1>Google Takeout Control Room</h1>
-        <p class="subtitle">No remote backend. Works directly with your local filesystem permissions in the browser.</p>
+        <p class="subtitle">Pipeline goal: process all ZIPs, flatten media, then make source <code>/unpacked</code> empty.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Pipeline Tracker</h2>
+          <button id="resetState" class="danger-btn reset-btn">Reset State</button>
+        </div>
+        <p id="pipelineGoal" class="goal">Source files left: -</p>
+        <div class="pipeline" id="pipeline">
+          <div class="step" id="step1" data-status="idle">
+            <span class="dot">1</span>
+            <div>
+              <div class="step-head">
+                <strong>Pick Source + Destination</strong>
+                <button id="clearStep1" class="step-clear-btn" title="Clear Step 1">×</button>
+              </div>
+              <p id="step1Text">Waiting for folders.</p>
+              <div class="mini-actions">
+                <button id="stepPickZipDir" class="mini-btn">Pick ZIPs Folder</button>
+                <button id="stepPickOutDir" class="mini-btn">Pick Output Root</button>
+              </div>
+              <div id="step1Details" class="step1-details">
+                <p id="step1ZipName">ZIPs: not selected</p>
+                <p id="step1OutName">Output: not selected</p>
+                <p id="step1SaveState">State: not saved yet</p>
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step2" data-status="idle">
+            <span class="dot">2</span>
+            <div>
+              <div class="step-head">
+                <strong>Unpack ZIPs</strong>
+                <button id="clearStep2" class="step-clear-btn" title="Clear Step 2">×</button>
+              </div>
+              <p id="step2Text">No scan yet.</p>
+              <div class="mini-actions">
+                <button id="stepUnpackBtn" class="mini-btn">Unpack</button>
+              </div>
+              <p id="step2Progress" class="step-progress">Progress: idle</p>
+            </div>
+          </div>
+          <div class="step" id="step3" data-status="idle">
+            <span class="dot">3</span>
+            <div>
+              <div class="step-head">
+                <strong>Flatten Files</strong>
+                <button id="clearStep3" class="step-clear-btn" title="Clear Step 3">×</button>
+              </div>
+              <p id="step3Text">Not started.</p>
+              <div class="mini-actions">
+                <label class="check-pill"><input id="step3TypeImages" type="checkbox" checked> images</label>
+                <label class="check-pill"><input id="step3TypeVideos" type="checkbox" checked> videos</label>
+                <button id="stepFlattenBtn" class="mini-btn">Flatten</button>
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step4" data-status="idle">
+            <span class="dot">4</span>
+            <div>
+              <div class="step-head">
+                <strong>Type Selection Notes</strong>
+                <button id="clearStep4" class="step-clear-btn" title="Clear Step 4">×</button>
+              </div>
+              <p id="step4Text">Type selection is handled in Step 3.</p>
+            </div>
+          </div>
+          <div class="step" id="step5" data-status="idle">
+            <span class="dot">5</span>
+            <div>
+              <div class="step-head">
+                <strong>Clean Leftovers</strong>
+                <button id="clearStep5" class="step-clear-btn" title="Clear Step 5">×</button>
+              </div>
+              <p id="step5Text">Analyze by extension.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="panel grid">
         <article class="card">
           <h2>Folders</h2>
           <div class="actions">
-            <button id="pickZipDir">Pick ZIP Source Folder</button>
+            <button id="pickZipDir">Pick ZIPs Folder</button>
             <button id="pickOutDir">Pick Output Folder</button>
             <button id="scan">Scan Status</button>
           </div>
@@ -35,17 +113,23 @@
         </article>
 
         <article class="card">
-          <h2>Pipeline</h2>
+          <h2>Pipeline Actions</h2>
           <div class="actions actions-stack">
             <button id="buildFixture">Build Test Fixture ZIP</button>
             <button id="unpackMissing">Unpack Missing ZIPs</button>
-            <button id="movePhotos">Move Photos</button>
-            <button id="moveVideos">Move Videos</button>
-            <button id="removeByExt">Remove by Extension</button>
+            <button id="stepFlattenBtnMirror">Flatten</button>
+            <button id="analyzeLeftovers">Analyze Leftovers</button>
+            <button id="removeByExt">Remove by Extension (Prompt)</button>
+            <button id="removeSelectedExt">Remove Selected Extensions</button>
             <button id="removeEmpty">Remove Empty Folders</button>
           </div>
-          <p class="hint">Pipeline paths in output root: <code>/unpacked</code>, <code>/photos</code>, <code>/videos</code></p>
+          <p class="hint">Paths under output root: <code>/unpacked</code>, <code>/photos</code>, <code>/videos</code>.</p>
         </article>
+      </section>
+
+      <section class="panel">
+        <h2>Leftovers In Source (<code>/unpacked</code>)</h2>
+        <div id="leftovers" class="leftovers">No analysis yet.</div>
       </section>
 
       <section class="panel">

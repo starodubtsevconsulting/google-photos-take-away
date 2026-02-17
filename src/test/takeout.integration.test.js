@@ -66,39 +66,48 @@ test('integration: build fixture zip in test/src', () => {
   resetDist();
   run('node', [fixtureBuilder]);
 
-  const zipPath = path.join(srcDir, 'takeout-sample.zip');
-  assert.equal(fs.existsSync(zipPath), true, 'fixture zip should exist');
-  assert.ok(fs.statSync(zipPath).size > 0, 'fixture zip should be non-empty');
+  const zips = fs.readdirSync(srcDir).filter((name) => name.toLowerCase().endsWith('.zip')).sort();
+  assert.ok(zips.length >= 2, `expected at least 2 fixture zips, got ${zips.length}`);
+
+  const zipA = path.join(srcDir, 'takeout-sample.zip');
+  const zipB = path.join(srcDir, 'takeout-sample-2.zip');
+  assert.equal(fs.existsSync(zipA), true, 'takeout-sample.zip should exist');
+  assert.equal(fs.existsSync(zipB), true, 'takeout-sample-2.zip should exist');
+  assert.ok(fs.statSync(zipA).size > 0, 'takeout-sample.zip should be non-empty');
+  assert.ok(fs.statSync(zipB).size > 0, 'takeout-sample-2.zip should be non-empty');
 });
 
 test('integration: takeout option 2 unpacks into test/dist/unpacked', () => {
   resetDist();
   run('node', [fixtureBuilder]);
 
-  run(takeoutCli, [], { input: '2\n8\n' });
+  run(takeoutCli, ['cli'], { input: '2\n8\n' });
 
-  const unpackedDir = path.join(unpackRoot, 'takeout-sample');
-  assert.equal(fs.existsSync(unpackedDir), true, 'unpacked folder should exist');
-  assert.ok(countFiles(unpackedDir) >= 5, 'unpacked folder should contain files');
+  const unpackedA = path.join(unpackRoot, 'takeout-sample');
+  const unpackedB = path.join(unpackRoot, 'takeout-sample-2');
+  assert.equal(fs.existsSync(unpackedA), true, 'unpacked takeout-sample folder should exist');
+  assert.equal(fs.existsSync(unpackedB), true, 'unpacked takeout-sample-2 folder should exist');
+  assert.ok(countFiles(unpackedA) >= 5, 'takeout-sample should contain files');
+  assert.ok(countFiles(unpackedB) >= 3, 'takeout-sample-2 should contain files');
 });
 
 test('integration: takeout options 3 and 4 move photos/videos to test/dist', () => {
   resetDist();
   run('node', [fixtureBuilder]);
 
-  run(takeoutCli, [], { input: '2\n8\n' });
+  run(takeoutCli, ['cli'], { input: '2\n8\n' });
   run('node', [moveFilesFlatCli, '--src', unpackRoot, '--dst', photosDir, '--type', 'image']);
   run('node', [moveFilesFlatCli, '--src', unpackRoot, '--dst', videosDir, '--type', 'video']);
 
-  assert.equal(countFiles(photosDir), 3, 'should move 3 photo files');
-  assert.equal(countFiles(videosDir), 2, 'should move 2 video files');
+  assert.equal(countFiles(photosDir), 4, 'should move 4 photo files');
+  assert.equal(countFiles(videosDir), 3, 'should move 3 video files');
   assert.equal(fs.existsSync(path.join(photosDir, 'IMG_0001-1.JPG')), true, 'should rename duplicate photo');
 });
 
 test('integration: remove_files_by_extension removes .json metadata files', () => {
   resetDist();
   run('node', [fixtureBuilder]);
-  run(takeoutCli, [], { input: '2\n8\n' });
+  run(takeoutCli, ['cli'], { input: '2\n8\n' });
 
   const unpackedDir = path.join(unpackRoot, 'takeout-sample');
   const jsonPath = path.join(unpackedDir, 'Album-2', 'meta.json');
@@ -112,7 +121,7 @@ test('integration: remove_files_by_extension removes .json metadata files', () =
 test('integration: remove_empty_folders removes empty directories after cleanup', () => {
   resetDist();
   run('node', [fixtureBuilder]);
-  run(takeoutCli, [], { input: '2\n8\n' });
+  run(takeoutCli, ['cli'], { input: '2\n8\n' });
 
   const emptyDir = path.join(unpackRoot, 'to-delete-empty-dir');
   fs.mkdirSync(emptyDir, { recursive: true });

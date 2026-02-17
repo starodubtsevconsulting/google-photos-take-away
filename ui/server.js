@@ -4,8 +4,11 @@ const fs = require('fs');
 const path = require('path');
 
 const root = __dirname;
+const repoRoot = path.resolve(root, '..');
 const port = Number(process.env.PORT || 4173);
 const host = process.env.HOST || '127.0.0.1';
+const stateDir = path.join(repoRoot, '.state');
+const stateFile = path.join(stateDir, 'state.json');
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -24,7 +27,62 @@ function send(res, status, body, type = 'text/plain; charset=utf-8') {
   res.end(body);
 }
 
+function sendJson(res, status, payload) {
+  send(res, status, JSON.stringify(payload, null, 2), 'application/json; charset=utf-8');
+}
+
+function readState() {
+  if (!fs.existsSync(stateFile)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeState(data) {
+  fs.mkdirSync(stateDir, { recursive: true });
+  fs.writeFileSync(stateFile, JSON.stringify(data, null, 2) + '\n', 'utf8');
+}
+
 const server = http.createServer((req, res) => {
+  if (req.url === '/api/state' && req.method === 'GET') {
+    sendJson(res, 200, readState());
+    return;
+  }
+
+  if (req.url === '/api/state' && req.method === 'PUT') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 1024 * 1024) {
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        const parsed = body ? JSON.parse(body) : {};
+        writeState(parsed);
+        sendJson(res, 200, { ok: true });
+      } catch {
+        sendJson(res, 400, { ok: false, error: 'Invalid JSON' });
+      }
+    });
+    return;
+  }
+
+  if (req.url === '/api/state' && req.method === 'DELETE') {
+    try {
+      if (fs.existsSync(stateFile)) {
+        fs.rmSync(stateFile, { force: true });
+      }
+      sendJson(res, 200, { ok: true });
+    } catch {
+      sendJson(res, 500, { ok: false, error: 'Failed to reset state' });
+    }
+    return;
+  }
+
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   const safePath = path.normalize(urlPath).replace(/^\/+/, '');
   let filePath = path.join(root, safePath || 'index.html');

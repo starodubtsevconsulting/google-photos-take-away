@@ -4,34 +4,58 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { walkFiles } = require('./lib/common');
 
-function buildFixtureZip() {
+function buildFixtureZips() {
   const repoDir = path.resolve(__dirname, '..');
-  const sourceDir = path.join(repoDir, 'test/src/source/takeout-sample');
-  const zipPath = path.join(repoDir, 'test/src/takeout-sample.zip');
+  const sourceRoot = path.join(repoDir, 'test/src/source');
+  const zipRoot = path.join(repoDir, 'test/src');
 
-  if (!fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) {
-    throw new Error(`Missing source fixture directory: ${sourceDir}`);
+  if (!fs.existsSync(sourceRoot) || !fs.statSync(sourceRoot).isDirectory()) {
+    throw new Error(`Missing source fixture root: ${sourceRoot}`);
   }
 
-  fs.mkdirSync(path.dirname(zipPath), { recursive: true });
-  if (fs.existsSync(zipPath)) {
-    fs.rmSync(zipPath, { force: true });
-  }
-
-  const fileArgs = walkFiles(sourceDir)
-    .map((file) => path.relative(sourceDir, file))
+  const fixtureDirs = fs
+    .readdirSync(sourceRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
     .sort((a, b) => a.localeCompare(b));
 
-  const result = spawnSync('zip', ['-X', '-q', zipPath, ...fileArgs], {
-    cwd: sourceDir,
-    encoding: 'utf8',
-  });
-
-  if (result.error || result.status !== 0) {
-    throw new Error(result.stderr || result.error?.message || 'zip command failed');
+  if (fixtureDirs.length === 0) {
+    throw new Error(`No fixture directories found under: ${sourceRoot}`);
   }
 
-  console.log(`Created fixture zip: ${zipPath}`);
+  fs.mkdirSync(zipRoot, { recursive: true });
+
+  const created = [];
+  for (const dirName of fixtureDirs) {
+    const sourceDir = path.join(sourceRoot, dirName);
+    const zipPath = path.join(zipRoot, `${dirName}.zip`);
+
+    if (fs.existsSync(zipPath)) {
+      fs.rmSync(zipPath, { force: true });
+    }
+
+    const fileArgs = walkFiles(sourceDir)
+      .map((file) => path.relative(sourceDir, file))
+      .sort((a, b) => a.localeCompare(b));
+
+    const result = spawnSync('zip', ['-X', '-q', zipPath, ...fileArgs], {
+      cwd: sourceDir,
+      encoding: 'utf8',
+    });
+
+    if (result.error || result.status !== 0) {
+      throw new Error(result.stderr || result.error?.message || `zip command failed for ${dirName}`);
+    }
+
+    created.push(zipPath);
+    console.log(`Created fixture zip: ${zipPath}`);
+  }
+
+  return created;
+}
+
+function buildFixtureZip() {
+  return buildFixtureZips();
 }
 
 if (require.main === module) {
@@ -43,4 +67,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { buildFixtureZip };
+module.exports = { buildFixtureZip, buildFixtureZips };
