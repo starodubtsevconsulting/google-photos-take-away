@@ -1,254 +1,233 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+const { ask, isYes } = require('./src/lib/common');
+const { validateUnpackedFolders } = require('./src/lib_validate_folders');
+const { unpackMissingZips } = require('./src/lib_unpack_missing_zips');
+const { moveFilesFlat } = require('./src/move_files_flat');
+const { removeEmptyFolders } = require('./src/remove_empty_folders');
+const { removeFilesByExtension } = require('./src/remove_files_by_extension');
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck source=scripts/lib_validate_folders.sh
-. "$SCRIPT_DIR/scripts/lib_validate_folders.sh"
-# shellcheck source=scripts/lib_unpack_missing_zips.sh
-. "$SCRIPT_DIR/scripts/lib_unpack_missing_zips.sh"
-# shellcheck source=scripts/delete-zips.sh
-. "$SCRIPT_DIR/scripts/delete-zips.sh"
+const REPO_DIR = __dirname;
+const DEFAULT_TARGET_DIR = path.join(REPO_DIR, 'test/src');
+const DEFAULT_UNPACK_ROOT = path.join(REPO_DIR, 'test/dist/unpacked');
+const DEFAULT_SRC_ROOT = DEFAULT_UNPACK_ROOT;
+const DEFAULT_DST_ROOT = path.join(REPO_DIR, 'test/dist');
 
-DEFAULT_SRC_ROOT="/media/USER/DRIVE/takeout"
-DEFAULT_DST_ROOT="/media/USER/DRIVE/takeout"
-
-prompt_src_dir() {
-  local input
-  read -rp "Source folder with unpacked takeout [${DEFAULT_SRC_ROOT}]: " input
-  if [ -z "$input" ]; then
-    input="$DEFAULT_SRC_ROOT"
-  fi
-  echo "$input"
+async function promptWithDefault(label, defaultValue) {
+  const input = await ask(`${label} [${defaultValue}]: `);
+  return input.trim() || defaultValue;
 }
 
-prompt_dst_root() {
-  local input
-  read -rp "Destination base folder [${DEFAULT_DST_ROOT}]: " input
-  if [ -z "$input" ]; then
-    input="$DEFAULT_DST_ROOT"
-  fi
-  echo "$input"
+function zipStatus(targetDir, unpackRoot) {
+  const all = fs.readdirSync(targetDir).filter((name) => name.toLowerCase().endsWith('.zip')).sort();
+  const unpacked = [];
+  const notUnpacked = [];
+
+  for (const zip of all) {
+    const base = zip.replace(/\.zip$/i, '');
+    const unpackedDir = path.join(unpackRoot, base);
+    if (fs.existsSync(unpackedDir) && fs.statSync(unpackedDir).isDirectory()) {
+      unpacked.push(zip);
+    } else {
+      notUnpacked.push(zip);
+    }
+  }
+
+  return { all, unpacked, notUnpacked };
 }
 
-prompt_root_dir() {
-  local input
-  read -rp "Root folder to clean empty directories [${DEFAULT_SRC_ROOT}]: " input
-  if [ -z "$input" ]; then
-    input="$DEFAULT_SRC_ROOT"
-  fi
-  echo "$input"
+async function cleanupEmptyFoldersFlow(rootDir) {
+  while (true) {
+    const summary = removeEmptyFolders(rootDir);
+    if (!summary.remaining || summary.remaining === 0) {
+      console.log('All folders are clean.');
+      break;
+    }
+
+    if (summary.extensions.length > 0) {
+      console.log(`Remaining file extensions: ${summary.extensions.join(',')}`);
+    }
+
+    const confirm = await ask('Remove files by extension and retry empty folders? [y/N]: ');
+    if (!isYes(confirm)) {
+      break;
+    }
+
+    const ext = (await ask('File extension to remove (e.g. .json): ')).trim();
+    removeFilesByExtension(rootDir, ext, false);
+  }
 }
 
-prompt_ext() {
-  local input
-  read -rp "File extension to remove (e.g. .json): " input
-  echo "$input"
+function startUiServer(portArg) {
+  const serverPath = path.join(REPO_DIR, 'ui', 'server.js');
+  if (!fs.existsSync(serverPath)) {
+    throw new Error(`UI server not found: ${serverPath}`);
+  }
+
+  const args = [serverPath];
+  const child = spawn(process.execPath, args, {
+    cwd: REPO_DIR,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      ...(portArg ? { PORT: String(portArg) } : {}),
+    },
+  });
+
+  child.on('exit', (code) => {
+    process.exit(code ?? 0);
+  });
 }
 
-cleanup_empty_folders_flow() {
-  local root_dir=$1
+async function runCli(targetDirArg) {
+  const targetDir = targetDirArg || DEFAULT_TARGET_DIR;
+  const resolvedTarget = path.resolve(targetDir);
 
-  while true; do
-    summary=$("$SCRIPT_DIR/scripts/remove_empty_folders.sh" --root "$root_dir" --summary)
-    remaining=$(echo "$summary" | awk -F= '/^REMAINING=/ {print $2}')
-    extensions=$(echo "$summary" | awk -F= '/^EXTENSIONS=/ {print $2}')
+  if (!fs.existsSync(resolvedTarget) || !fs.statSync(resolvedTarget).isDirectory()) {
+    console.error(`Directory not found: ${targetDir}`);
+    process.exit(1);
+  }
 
-    if [ -z "$remaining" ] || [ "$remaining" -eq 0 ]; then
-      echo "All folders are clean."
-      break
-    fi
+  process.chdir(resolvedTarget);
 
-    if [ -n "$extensions" ]; then
-      echo "Remaining file extensions: $extensions"
-    fi
+  while (true) {
+    const { all, unpacked, notUnpacked } = zipStatus('.', DEFAULT_UNPACK_ROOT);
 
-    read -rp "Remove files by extension and retry empty folders? [y/N]: " confirm
-    case "$confirm" in
-      [yY]|[yY][eE][sS])
-        ext=$(prompt_ext)
-        "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
+    if (all.length === 0) {
+      console.log('No zip files found.');
+      console.log('');
+      console.log('Choose action:');
+      console.log('--------------');
+      console.log('  1) Move photos to <dst>/photos (flat)');
+      console.log('  2) Move videos to <dst>/videos (flat)');
+      console.log('  3) Remove empty folders');
+      console.log('  4) Remove files by extension');
+      console.log('  5) Validate unpacked folders contain data');
+      console.log('  6) Refresh status');
+      console.log('  7) Exit');
+      console.log('');
+      const choice = (await ask('Enter choice [1-7]: ')).trim();
+
+      if (choice === '1') {
+        const srcDir = await promptWithDefault('Source folder with unpacked takeout', DEFAULT_SRC_ROOT);
+        const dstRoot = await promptWithDefault('Destination base folder', DEFAULT_DST_ROOT);
+        moveFilesFlat(srcDir, `${dstRoot}/photos`, false, 'image');
+      } else if (choice === '2') {
+        const srcDir = await promptWithDefault('Source folder with unpacked takeout', DEFAULT_SRC_ROOT);
+        const dstRoot = await promptWithDefault('Destination base folder', DEFAULT_DST_ROOT);
+        moveFilesFlat(srcDir, `${dstRoot}/videos`, false, 'video');
+      } else if (choice === '3') {
+        const rootDir = await promptWithDefault('Root folder to clean empty directories', DEFAULT_SRC_ROOT);
+        await cleanupEmptyFoldersFlow(rootDir);
+      } else if (choice === '4') {
+        const rootDir = await promptWithDefault('Root folder to clean empty directories', DEFAULT_SRC_ROOT);
+        const ext = (await ask('File extension to remove (e.g. .json): ')).trim();
+        removeFilesByExtension(rootDir, ext, false);
+      } else if (choice === '5') {
+        console.log('Nothing to validate: no zip files found.');
+      } else if (choice === '6') {
+        continue;
+      } else if (choice === '7') {
+        console.log('Exit.');
+        process.exit(0);
+      } else {
+        console.log('Invalid choice.');
+      }
+      continue;
+    }
+
+    console.log('');
+    console.log('Status:');
+    console.log('-------');
+    console.log(`${unpacked.length} out of ${all.length} unpacked`);
+    if (notUnpacked.length === 0) {
+      console.log('All unpacked');
+    } else {
+      console.log(`${notUnpacked.length} not unpacked`);
+    }
+    console.log('');
+
+    if (notUnpacked.length === 0) {
+      const autoValidate = await ask('All unpacked. Validate now? [y/N]: ');
+      if (isYes(autoValidate)) {
+        await validateUnpackedFolders(unpacked);
+        continue;
+      }
+    }
+
+    console.log('Choose action:');
+    console.log('--------------');
+    console.log('  1) Validate unpacked folders contain data');
+    console.log('  2) Unpack missing zips');
+    console.log('  3) Move photos to <dst>/photos (flat)');
+    console.log('  4) Move videos to <dst>/videos (flat)');
+    console.log('  5) Remove empty folders');
+    console.log('  6) Remove files by extension');
+    console.log('  7) Refresh status');
+    console.log('  8) Exit');
+    console.log('');
+
+    const choice = (await ask('Enter choice [1-8]: ')).trim();
+
+    if (choice === '1') {
+      await validateUnpackedFolders(unpacked);
+    } else if (choice === '2') {
+      unpackMissingZips(notUnpacked, { outputRoot: DEFAULT_UNPACK_ROOT });
+    } else if (choice === '3') {
+      const srcDir = await promptWithDefault('Source folder with unpacked takeout', DEFAULT_SRC_ROOT);
+      const dstRoot = await promptWithDefault('Destination base folder', DEFAULT_DST_ROOT);
+      moveFilesFlat(srcDir, `${dstRoot}/photos`, false, 'image');
+    } else if (choice === '4') {
+      const srcDir = await promptWithDefault('Source folder with unpacked takeout', DEFAULT_SRC_ROOT);
+      const dstRoot = await promptWithDefault('Destination base folder', DEFAULT_DST_ROOT);
+      moveFilesFlat(srcDir, `${dstRoot}/videos`, false, 'video');
+    } else if (choice === '5') {
+      const rootDir = await promptWithDefault('Root folder to clean empty directories', DEFAULT_SRC_ROOT);
+      await cleanupEmptyFoldersFlow(rootDir);
+    } else if (choice === '6') {
+      const rootDir = await promptWithDefault('Root folder to clean empty directories', DEFAULT_SRC_ROOT);
+      const ext = (await ask('File extension to remove (e.g. .json): ')).trim();
+      removeFilesByExtension(rootDir, ext, false);
+    } else if (choice === '7') {
+      continue;
+    } else if (choice === '8') {
+      console.log('Exit.');
+      process.exit(0);
+    } else {
+      console.log('Invalid choice.');
+    }
+  }
 }
 
-move_photos_flow() {
-  local src_dir=$1
-  local dst_root=$2
-  "$SCRIPT_DIR/scripts/move_files_flat.sh" \
-    --src "$src_dir" \
-    --dst "$dst_root/photos" \
-    --type image
+async function main() {
+  const mode = process.argv[2];
+
+  if (!mode || mode === 'ui') {
+    const portArg = process.argv[3];
+    startUiServer(portArg);
+    return;
+  }
+
+  if (mode === 'cli') {
+    await runCli(process.argv[3]);
+    return;
+  }
+
+  if (fs.existsSync(mode) && fs.statSync(mode).isDirectory()) {
+    await runCli(mode);
+    return;
+  }
+
+  console.log('Usage:');
+  console.log('  ./takeout              # start web UI');
+  console.log('  ./takeout ui [port]    # start web UI on optional port');
+  console.log('  ./takeout cli [dir]    # start terminal mode');
+  console.log('  ./takeout <dir>        # terminal mode (backward compatible)');
 }
 
-move_videos_flow() {
-  local src_dir=$1
-  local dst_root=$2
-  "$SCRIPT_DIR/scripts/move_files_flat.sh" \
-    --src "$src_dir" \
-    --dst "$dst_root/videos" \
-    --type video
-}
-TARGET_DIR="${1:-.}"
-
-if [ ! -d "$TARGET_DIR" ]; then
-  echo "Directory not found: $TARGET_DIR"
-  exit 1
-fi
-
-cd "$TARGET_DIR"
-shopt -s nullglob
-
-while true; do
-  ZIP_FILES=( *.zip )
-  TOTAL=${#ZIP_FILES[@]}
-
-  if [ "$TOTAL" -eq 0 ]; then
-    echo "No zip files found."
-    echo
-    echo "Choose action:"
-    echo "--------------"
-    echo "  1) Move photos to <dst>/photos (flat)"
-    echo "  2) Move videos to <dst>/videos (flat)"
-    echo "  3) Remove empty folders"
-    echo "  4) Remove files by extension"
-    echo "  5) Validate unpacked folders contain data"
-    echo "  6) Refresh status"
-    echo "  7) Exit"
-    echo
-    read -rp "Enter choice [1-7]: " choice
-
-    case "$choice" in
-      1)
-        src_dir=$(prompt_src_dir)
-        dst_root=$(prompt_dst_root)
-        move_photos_flow "$src_dir" "$dst_root"
-        ;;
-      2)
-        src_dir=$(prompt_src_dir)
-        dst_root=$(prompt_dst_root)
-        move_videos_flow "$src_dir" "$dst_root"
-        ;;
-      3)
-        root_dir=$(prompt_root_dir)
-        cleanup_empty_folders_flow "$root_dir"
-        ;;
-      4)
-        root_dir=$(prompt_root_dir)
-        ext=$(prompt_ext)
-        "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
-        ;;
-      5)
-        echo "Nothing to validate: no zip files found."
-        ;;
-      6)
-        continue
-        ;;
-      7)
-        echo "Exit."
-        exit 0
-        ;;
-      *)
-        echo "Invalid choice."
-        ;;
-    esac
-    continue
-  fi
-
-  unpacked=()
-  not_unpacked=()
-
-  for zip in "${ZIP_FILES[@]}"; do
-    base="${zip%.zip}"
-    if [ -d "$base" ]; then
-      unpacked+=( "$zip" )
-    else
-      not_unpacked+=( "$zip" )
-    fi
-  done
-
-  echo
-  echo "Status:"
-  echo "-------"
-  echo "${#unpacked[@]} out of $TOTAL unpacked"
-  if [ "${#not_unpacked[@]}" -eq 0 ]; then
-    echo "All unpacked"
-  else
-    echo "${#not_unpacked[@]} not unpacked"
-  fi
-  echo
-
-  if [ "${#not_unpacked[@]}" -eq 0 ]; then
-    read -rp "All unpacked. Validate now? [y/N]: " auto_validate
-    case "$auto_validate" in
-      [yY]|[yY][eE][sS])
-        validate_unpacked_folders unpacked
-        continue
-        ;;
-      *)
-        ;;
-    esac
-  fi
-
-  echo "Choose action:"
-  echo "--------------"
-  echo "  1) Validate unpacked folders contain data"
-  echo "  2) Unpack missing zips"
-  echo "  3) Move photos to <dst>/photos (flat)"
-  echo "  4) Move videos to <dst>/videos (flat)"
-  echo "  5) Remove empty folders"
-  echo "  6) Remove files by extension"
-  echo "  7) Refresh status"
-  echo "  8) Exit"
-  echo
-  read -rp "Enter choice [1-8]: " choice
-
-  case "$choice" in
-
-    1)
-      validate_unpacked_folders unpacked
-      ;;
-
-    2)
-      unpack_missing_zips not_unpacked
-      ;;
-
-    3)
-      src_dir=$(prompt_src_dir)
-      dst_root=$(prompt_dst_root)
-      move_photos_flow "$src_dir" "$dst_root"
-      ;;
-
-    4)
-      src_dir=$(prompt_src_dir)
-      dst_root=$(prompt_dst_root)
-      move_videos_flow "$src_dir" "$dst_root"
-      ;;
-
-    5)
-      root_dir=$(prompt_root_dir)
-      cleanup_empty_folders_flow "$root_dir"
-      ;;
-
-    6)
-      root_dir=$(prompt_root_dir)
-      ext=$(prompt_ext)
-      "$SCRIPT_DIR/scripts/remove_files_by_extension.sh" --root "$root_dir" --ext "$ext"
-      ;;
-
-    7)
-      continue
-      ;;
-
-    8)
-      echo "Exit."
-      exit 0
-      ;;
-    *)
-      echo "Invalid choice."
-      ;;
-  esac
-done
+main().catch((err) => {
+  console.error(err.message);
+  process.exit(1);
+});

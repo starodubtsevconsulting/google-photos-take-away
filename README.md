@@ -11,6 +11,20 @@ This script provides a bit of that functionality. It works on Linux (and I think
 
 How to use:
 
+Start Web UI (default):
+
+```bash
+./takeout
+```
+
+![web-ui.png](img/web-ui.png)
+
+Start terminal mode:
+
+```bash
+./takeout cli
+```
+
 I assume you’ve downloaded all the 
 ZIP files into a single folder. This could be improved if Google had an API to request and download everything automatically — but no, I don’t think they’ll ever do that; it’s not in their interest 🙂. When you do it manually, they ask you to confirm your identity every 5–10 ZIPs, which shows how hard they don’t want you to go through with it. So we assume you download the ZIPs once.
 
@@ -34,13 +48,13 @@ Move files (flat):
 
 ```bash
 # Photos
-./scripts/move_files_flat.sh --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
+./src/move_files_flat.js --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
 
 # Videos
-./scripts/move_files_flat.sh --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/videos --type video
+./src/move_files_flat.js --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/videos --type video
 
 # Dry run
-./scripts/move_files_flat.sh --dry-run --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
+./src/move_files_flat.js --dry-run --src /media/USER/DRIVE/takeout --dst /media/USER/DRIVE/takeout/photos --type image
 ```
 
 TODO: add more file types for each section when moving files.
@@ -135,13 +149,69 @@ You can’t just select all 10,000 ZIP files and unpack them at once — it will
 
 Sure, you could — I just don’t know any. And besides that, it’s more than just unzipping: once everything is unpacked, you still have to do some shuffling and go through the folders, which takes time too.
 
-### Why `.sh` (Bash) script? Why not my popular language?
+### Why Node.js scripts?
 
-Because Bash is gold:  
-[Why Bash Scripting Shines in the AI Era](https://medium.com/starodubtsev-consulting/why-bash-scripting-shines-in-the-ai-era-e6dfa29cbc6c)
+Node.js keeps the tool portable while still allowing shell utilities (`zip`, `unzip`) where needed.
 
 
 ## Links:
 - Google Takeout Photos: https://takeout.google.com/settings/takeout/custom/photos
 - Related article: [I Sold the Lens Before It Sold Me](https://medium.com/@sergii_54085/i-sold-the-lens-before-it-sold-me-4bdecb778559?postPublishedType=repub)
 - Any questions or suggestions? Feel free to contact me: https://starodubtsev.consulting/
+
+## Test Fixture (`test/src` and `test/dist`)
+
+Use a stable ZIP fixture for repeated testing.
+
+- `test/src/takeout-sample.zip` is the test ZIP input.
+- `test/dist/` is recreated on each smoke test run and contains extracted/unpacked outputs.
+
+Build/update the fixture ZIP from source files:
+
+```bash
+./src/build_test_fixture_zip.js
+```
+
+Run smoke test (unzip + flat move checks):
+
+```bash
+./src/smoke_test_fixture.js
+```
+
+Fixture source files are stored in:
+
+- `test/src/source/takeout-sample/`
+
+## Web UI (No Remote Backend)
+
+A local-first web UI is available in `ui/`.
+
+- Entry point: `ui/index.html`
+- Browser requirement: Chromium-based browser with File System Access API
+- Runtime model: browser UI + direct local folder permissions, no remote backend
+
+### Run
+
+Serve `ui/` as static files (secure context is required for folder picker APIs):
+
+```bash
+cd ui
+python3 -m http.server 4173
+```
+
+Then open:
+
+- `http://localhost:4173`
+
+### UI Flow
+
+1. Pick ZIP source folder (recommended for tests: `test/src`)
+2. Pick output folder (recommended for tests: `test/dist`)
+3. Use actions:
+   - `Scan Status`
+   - `Build Test Fixture ZIP`
+   - `Unpack Missing ZIPs`
+   - `Move Photos`
+   - `Move Videos`
+   - `Remove by Extension`
+   - `Remove Empty Folders`

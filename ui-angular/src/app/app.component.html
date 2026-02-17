@@ -1,0 +1,43 @@
+<main class="app-shell">
+  <section class="hero">
+    <p class="eyebrow">Angular Local UI</p>
+    <h1>Google Takeout Control Room</h1>
+    <p class="subtitle">No remote backend. Browser writes directly to local folders you authorize.</p>
+  </section>
+
+  <section class="grid">
+    <article class="card">
+      <h2>Folders</h2>
+      <div class="actions">
+        <button [disabled]="busy" (click)="pickZipDir()">Pick ZIP Source</button>
+        <button [disabled]="busy" (click)="pickOutDir()">Pick Output Root</button>
+        <button [disabled]="busy" (click)="scanStatus()">Scan Status</button>
+      </div>
+      <p class="path">ZIP source: {{ zipDir?.name || 'not selected' }}</p>
+      <p class="path">Output root: {{ outDir?.name || 'not selected' }}</p>
+      <div class="stats">
+        <div><span>{{ status.total }}</span><label>Total ZIPs</label></div>
+        <div><span>{{ status.unpacked }}</span><label>Unpacked</label></div>
+        <div><span>{{ status.pending }}</span><label>Pending</label></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>Pipeline</h2>
+      <div class="actions stack">
+        <button [disabled]="busy" (click)="buildFixtureZip()">Build Test Fixture ZIP</button>
+        <button [disabled]="busy" (click)="unpackMissing()">Unpack Missing ZIPs</button>
+        <button [disabled]="busy" (click)="movePhotos()">Move Photos</button>
+        <button [disabled]="busy" (click)="moveVideos()">Move Videos</button>
+        <button [disabled]="busy" (click)="removeByExtension()">Remove by Extension</button>
+        <button [disabled]="busy" (click)="removeEmptyFolders()">Remove Empty Folders</button>
+      </div>
+      <p class="hint">Output structure: <code>/unpacked</code>, <code>/photos</code>, <code>/videos</code>.</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <h2>Run Log</h2>
+    <pre class="log">{{ logs.join('\n') }}</pre>
+  </section>
+</main>

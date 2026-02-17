@@ -4,3 +4,6 @@ plan/
 .fleet/
 .settings/
 *.iml
+
+test/dist/*
+!test/dist/.gitkeep

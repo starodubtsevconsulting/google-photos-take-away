@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Takeout Control Room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <p class="eyebrow">Local-Only Web UI</p>
+        <h1>Google Takeout Control Room</h1>
+        <p class="subtitle">No remote backend. Works directly with your local filesystem permissions in the browser.</p>
+      </section>
+
+      <section class="panel grid">
+        <article class="card">
+          <h2>Folders</h2>
+          <div class="actions">
+            <button id="pickZipDir">Pick ZIP Source Folder</button>
+            <button id="pickOutDir">Pick Output Folder</button>
+            <button id="scan">Scan Status</button>
+          </div>
+          <p id="zipDirLabel" class="path">ZIP source: not selected</p>
+          <p id="outDirLabel" class="path">Output root: not selected</p>
+          <div class="stats">
+            <div><span id="zipTotal">0</span><label>Total ZIPs</label></div>
+            <div><span id="zipUnpacked">0</span><label>Unpacked</label></div>
+            <div><span id="zipPending">0</span><label>Pending</label></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Pipeline</h2>
+          <div class="actions actions-stack">
+            <button id="buildFixture">Build Test Fixture ZIP</button>
+            <button id="unpackMissing">Unpack Missing ZIPs</button>
+            <button id="movePhotos">Move Photos</button>
+            <button id="moveVideos">Move Videos</button>
+            <button id="removeByExt">Remove by Extension</button>
+            <button id="removeEmpty">Remove Empty Folders</button>
+          </div>
+          <p class="hint">Pipeline paths in output root: <code>/unpacked</code>, <code>/photos</code>, <code>/videos</code></p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Run Log</h2>
+        <pre id="log" class="log"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
